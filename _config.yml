@@ -1,7 +1,7 @@
 # Harmony Jekyll theme general configurations 
 
 # Base URL
-baseurl: /harmony
+baseurl: /andyhatman.github.io
 
 # Site live URL
 url: http://andyhatman.github.io
@@ -13,7 +13,7 @@ url: http://andyhatman.github.io
 harmony:
   name: Andy Hatman
   # Little description about your site
-  description: Invisible man .
+  description: Invisible man blog.
   # 'meta_description:' Write an awesome description for your new site here.
   # It will appear in your document head meta (for Google search results) and 
   # in your feed.xml site description.
