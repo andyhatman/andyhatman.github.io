@@ -1,42 +1,41 @@
 # Harmony Jekyll theme general configurations 
 
 # Base URL
-baseurl: /harmony
+baseurl: /andyhatman.github.io
 
 # Site live URL
-#url: http://andyhatman.me
+url: http://andyhatman.github.io
 
 # Localhost 
-url: http://127.0.0.1:4000  
+#url: http://127.0.0.1:4000  
 
 # Harmony theme configuration. Please change accordingly.
 harmony:
-  name: Harmony
+  name: Andy Hatman
   # Little description about your site
   description: Harmony is free responsive jekyll theme.
   # 'meta_description:' Write an awesome description for your new site here.
   # It will appear in your document head meta (for Google search results) and 
   # in your feed.xml site description.
   meta_description: > # 
-   Harmony is a free responsive jekyll theme by Gayan Virajith
-   and Maheshika Lakmali. Sourced on Github - 
-   https://github.com/gayanvirajith/harmony
+   Personal blog about /dev /linux /web.
+   Hosted on Githubpages.
   basetheme: theme-base-01 # pre defined thmes are darken, blue-water, redish.
   author: # Author details
-    name: Gayan Virajith
-    email: gayanvirajith@gmail.com
-    url: http://gayanvirajith.github.io
+    name: Andy Hatman
+    email: liaros88'at'gmail'dot'com
+    url: http://andyhatman.github.io
 
   # Google Analytics key, leave blank to ignore
   google_analytics_key: UA-xxxx-x
 
   # Profile links, leave blank to ignore
   social: 
-    github: gayanvirajith
-    twitter: gayanvirajith
-    facebook: gayanvirajith
-    gplus: +GayanVirajith
-    dribble: gayan
+    github: andyhatman
+    twitter:
+    facebook:
+    gplus:
+    dribble:
     pinterest: 
   # Toggle disclaimer in footer
   show_disclaimer: true
