@@ -1,13 +1,6 @@
-# Harmony Jekyll theme general configurations 
-
-# Base URL
-#baseurl: /andyhatman.github.io
-
+# Harmony based Jekyll theme general configurations 
 # Site live URL
 url: http://andyhatman.github.io
-
-# Localhost 
-#url: http://127.0.0.1:4000  
 
 # Harmony theme configuration. Please change accordingly.
 harmony:
@@ -31,14 +24,14 @@ harmony:
 
   # Profile links, leave blank to ignore
   social: 
-    github: andyhatman
-    twitter:
-    facebook:
-    gplus:
-    dribble:
-    pinterest: 
+  #  github: andyhatman
+  #  twitter:
+  #  facebook:
+  #  gplus:
+  #  dribble:
+  #  pinterest: 
   # Toggle disclaimer in footer
-  show_disclaimer: true
+  show_disclaimer: false
 
 # Conversion / Build settings 
 markdown:    kramdown
