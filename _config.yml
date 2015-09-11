@@ -1,7 +1,7 @@
 # Harmony based Jekyll theme general configurations 
 # Site live URL
-#url: http://andyhatman.github.io
-url: http://localhost:4000
+url: http://andyhatman.github.io
+#url: http://localhost:4000
 
 # Harmony theme configuration. Please change accordingly.
 harmony:
