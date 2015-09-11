@@ -5,7 +5,7 @@ permalink: /about/
 ---
 
 Hi, I am Andy Hatman.
-You need to:
+IF you need to:
  - Deploy/Admin your LAMP/LEMP web-server.
 
 ### Contact me
