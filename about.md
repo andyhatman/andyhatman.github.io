@@ -1,13 +1,7 @@
 ---
 layout: page
-title: About me
+title: About
 permalink: /about/
 ---
 
-Hi, i am Andy Hatman.
-IF you need to: 
-- Deploy/Admin your LAMP/LEMP web-server.
-
-### Contact me
-
-liaros88'at'gmail'dot'com
+Привет, меня зовут Андрей Шляпин (Andy Hatman).
