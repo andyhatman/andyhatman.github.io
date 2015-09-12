@@ -5,7 +5,7 @@ url: http://andyhatman.github.io
 
 # Harmony theme configuration. Please change accordingly.
 harmony:
-  name: /home/andyhatman
+  name: /home/andyhatman~$:ls
   # Little description about your site
   description:
   # 'meta_description:' Write an awesome description for your new site here.
