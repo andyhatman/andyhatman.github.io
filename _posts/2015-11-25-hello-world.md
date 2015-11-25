@@ -1,8 +1,7 @@
 ---
 layout: post
-title: "Hello World"
-description: ""
-category: 
-tags: []
+title: "dnsmasq"
+description: "Направляем домены на нужные IP"
+category:
+tags: admin, linux
 ---
-{% include JB/setup %}
