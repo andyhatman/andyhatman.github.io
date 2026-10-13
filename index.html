@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>welcome</title>
+  <style>
+    body {
+      background-color: black;
+      margin: 0;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+
+  <script>
+    const canvas = document.getElementById('matrix');
+    const ctx = canvas.getContext('2d');
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+
+    const alphabet = 'ANDYHATMANandyhatman8';
+    const columns = width / 20;
+    const rainDrops = [];
+
+    for (let i = 0; i < columns; i++) {
+      rainDrops[i] = 1;
+    }
+
+    function draw() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.fillStyle = '#0F0';
+      ctx.font = '20px monospace';
+
+      for (let i = 0; i < rainDrops.length; i++) {
+        const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+        ctx.fillText(text, i * 20, rainDrops[i] * 20);
+
+        if (rainDrops[i] * 20 > height && Math.random() > 0.975) {
+          rainDrops[i] = 0;
+        }
+        rainDrops[i]++;
+      }
+    }
+
+    setInterval(draw, 30);
+  </script>
+</body>
+</html>
