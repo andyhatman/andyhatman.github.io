@@ -1,53 +1,473 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>welcome</title>
-  <style>
-    body {
-      background-color: black;
-      margin: 0;
-      overflow: hidden;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:">
+<title>andy hatman</title>
+<meta name="description" content="andy hatman">
+<meta property="og:title" content="andy hatman">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://andyhatman.com/">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000'/%3E%3Ctext x='16' y='24' font-family='monospace' font-size='24' text-anchor='middle' fill='%2300ff66'%3Eａ%3C/text%3E%3C/svg%3E">
+<style>
+  :root { --fg: #00ff66; --bg: #000; }
+  html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
+  body { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--fg); }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+
+  /* The name is drawn by the rain; this copy is for screen readers, search engines and no-JS. */
+  h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; }
+  .nojs h1 { position: fixed; inset: 0; width: auto; height: auto; clip-path: none; display: grid; place-items: center;
+             font-size: clamp(2rem, 10vw, 7rem); font-weight: 400; letter-spacing: .08em; text-shadow: 0 0 .4em var(--fg); }
+
+  #tbtn { position: fixed; left: max(16px, env(safe-area-inset-left)); bottom: max(14px, env(safe-area-inset-bottom));
+          background: none; border: 0; color: var(--fg); font: 18px/1 inherit; font-family: inherit; opacity: .35;
+          cursor: pointer; padding: 8px; animation: blink 1.1s steps(1) infinite; }
+  #tbtn:hover, #tbtn:focus-visible { opacity: .9; outline: none; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  #term { position: fixed; left: 0; right: 0; bottom: 0; max-height: 46vh; display: flex; flex-direction: column;
+          background: rgba(0, 0, 0, .82); border-top: 1px solid color-mix(in srgb, var(--fg) 35%, transparent);
+          backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+          padding: 10px max(16px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom));
+          font-size: 14px; line-height: 1.45; text-shadow: 0 0 6px color-mix(in srgb, var(--fg) 60%, transparent); }
+  #term[hidden] { display: none; }
+  #out { overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+  .line { display: flex; gap: .6ch; align-items: baseline; }
+  .ps1 { white-space: nowrap; opacity: .8; }
+  #in { flex: 1; min-width: 0; background: none; border: 0; outline: none; color: inherit; font: inherit; caret-color: var(--fg);
+        text-shadow: inherit; padding: 0; }
+  .dim { opacity: .55; }
+  @media (max-width: 480px) { #term { font-size: 13px; } .ps1 .host { display: none; } }
+</style>
 </head>
-<body>
-  <canvas id="matrix"></canvas>
+<body class="nojs">
+<h1>andy hatman</h1>
+<canvas id="rain" aria-hidden="true"></canvas>
+<button id="tbtn" type="button" aria-label="Open terminal" hidden>_</button>
+<div id="term" role="dialog" aria-label="Terminal" hidden>
+  <div id="out" aria-live="polite"></div>
+  <div class="line"><span class="ps1">guest<span class="host">@andyhatman.com</span>:~$</span><input id="in" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Command"></div>
+</div>
 
-  <script>
-    const canvas = document.getElementById('matrix');
-    const ctx = canvas.getContext('2d');
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    canvas.width = width;
-    canvas.height = height;
+<script>
+"use strict";
+document.body.classList.remove("nojs");
 
-    const alphabet = 'ANDYHATMANandyhatman8';
-    const columns = width / 20;
-    const rainDrops = [];
+// ---------- setup ----------
+const NAME = "andy hatman";
+const KATAKANA = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝ";
+const GLYPHS = (KATAKANA + "0123456789:.=*+-<>¦|" + "ANDYHATMANandyhatman").split("");
+const glyph = () => GLYPHS[(Math.random() * GLYPHS.length) | 0];
 
-    for (let i = 0; i < columns; i++) {
-      rainDrops[i] = 1;
+const THEMES = {
+  green: { head: "#d8ffe4", trail: "#00ff66", name: "#7dffad", glow: "#00ff66" },
+  red:   { head: "#ffe0e0", trail: "#ff2a3d", name: "#ff8a94", glow: "#ff2a3d" },
+  blue:  { head: "#e0f0ff", trail: "#1e90ff", name: "#8cc8ff", glow: "#1e90ff" },
+  amber: { head: "#fff3d6", trail: "#ffb000", name: "#ffd36b", glow: "#ffb000" },
+  white: { head: "#ffffff", trail: "#b8b8b8", name: "#ffffff", glow: "#ffffff" },
+};
+let theme = THEMES.green;
+
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const canvas = document.getElementById("rain");
+const ctx = canvas.getContext("2d", { alpha: false });
+const nameLayer = document.createElement("canvas");   // pre-rendered glowing name, redrawn ~12x/s
+const nctx = nameLayer.getContext("2d");
+
+let W = 0, H = 0, DPR = 1;
+let speed = 1, densityMul = 1, paused = false;
+
+// Three depth layers: back (small, dim, slow) → front (big, bright, fast). Sizes in CSS px.
+const LAYER_DEFS = [
+  { size: 11, speed: 9,  alpha: 0.35 },
+  { size: 16, speed: 15, alpha: 0.65 },
+  { size: 24, speed: 22, alpha: 1.0 },
+];
+let layers = [];
+
+function makeDrop(layer, initial) {
+  return { y: initial ? Math.random() * -H / layer.size * 1.5 : -Math.random() * 20,
+           v: layer.speed * (0.7 + Math.random() * 0.6), last: -1, ch: glyph() };
+}
+
+function buildLayers() {
+  layers = LAYER_DEFS.map(d => {
+    const size = d.size * (W < 500 ? 0.8 : 1);
+    const layer = { ...d, size, drops: [] };
+    const cols = Math.ceil(W / size * Math.min(1, densityMul));
+    const spacing = W / cols;
+    for (let i = 0; i < cols; i++) {
+      const drop = makeDrop(layer, true);
+      drop.x = i * spacing + spacing / 2;
+      layer.drops.push(drop);
     }
+    return layer;
+  });
+}
 
-    function draw() {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, width, height);
+// ---------- the name: a hidden mask the rain "decodes" ----------
+const name = { cell: 12, cols: 0, rows: 0, mask: null, lit: null, ch: null, cells: [], bbox: null,
+               phase: "idle", t: 0, decoders: [], alpha: 0, dirty: true };
 
-      ctx.fillStyle = '#0F0';
-      ctx.font = '20px monospace';
+function buildName() {
+  const portrait = W / H < 0.9;
+  const lines = portrait ? ["andy", "hatman"] : [NAME];
+  const m = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+  // Size the text to fill ~80% of the width, capped by height.
+  let fs = 100;
+  m.font = `700 ${fs}px ${getComputedStyle(document.body).fontFamily}`;
+  const widest = Math.max(...lines.map(l => m.measureText(l).width));
+  fs = Math.min(fs * (W * 0.82) / widest, (H * (portrait ? 0.42 : 0.36)) / lines.length / 1.05);
+  // Glyph size follows the letter size, so every letter is ~13 glyphs tall and readable on any screen.
+  name.cell = Math.max(5, Math.min(14, Math.round(fs / 13)));
+  name.cols = Math.ceil(W / name.cell);
+  name.rows = Math.ceil(H / name.cell);
+  m.canvas.width = name.cols; m.canvas.height = name.rows;          // one pixel per cell
+  const s = fs / name.cell;
+  m.font = `700 ${s}px ${getComputedStyle(document.body).fontFamily}`;
+  m.textAlign = "center"; m.textBaseline = "middle"; m.fillStyle = "#fff";
+  const lh = s * 1.05, top = name.rows / 2 - (lines.length - 1) * lh / 2;
+  lines.forEach((l, i) => m.fillText(l, name.cols / 2, top + i * lh));
+  const px = m.getImageData(0, 0, name.cols, name.rows).data;
+  const n = name.cols * name.rows;
+  name.mask = new Uint8Array(n); name.lit = new Float32Array(n); name.ch = new Array(n);
+  name.cells = [];
+  let x0 = 1e9, x1 = -1, y0 = 1e9, y1 = -1;
+  for (let i = 0; i < n; i++) {
+    if (px[i * 4 + 3] > 110) {
+      name.mask[i] = 1; name.cells.push(i); name.ch[i] = glyph();
+      const x = i % name.cols, y = (i / name.cols) | 0;
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+    }
+  }
+  name.bbox = { x0, x1, y0, y1 };
+  nameLayer.width = W * DPR; nameLayer.height = H * DPR;
+  nctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  name.dirty = true;
+}
 
-      for (let i = 0; i < rainDrops.length; i++) {
-        const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
-        ctx.fillText(text, i * 20, rainDrops[i] * 20);
+function setPhase(p) { name.phase = p; name.t = 0; }
 
-        if (rainDrops[i] * 20 > height && Math.random() > 0.975) {
-          rainDrops[i] = 0;
+function startDecode() {
+  const { x0, x1, y0 } = name.bbox;
+  name.lit.fill(0);
+  name.decoders = [];
+  for (let c = x0; c <= x1; c++) {
+    name.decoders.push({ c, y: y0 - 2 - Math.random() * 18, v: 22 + Math.random() * 26 });
+  }
+  setPhase("decode");
+}
+
+function stepName(dt) {
+  name.t += dt;
+  switch (name.phase) {
+    case "idle":
+      name.alpha = Math.max(0, name.alpha - dt);
+      if (name.t > (name.first ? 2.2 : 9)) { name.first = false; startDecode(); }
+      break;
+    case "decode": {
+      name.alpha = Math.min(1, name.alpha + dt * 3);
+      let active = 0;
+      for (const d of name.decoders) {
+        const prev = d.y | 0;
+        d.y += d.v * dt * speed;
+        for (let r = Math.max(0, prev); r <= Math.min(name.rows - 1, d.y | 0); r++) {
+          const i = r * name.cols + d.c;
+          if (name.mask[i] && !name.lit[i]) { name.lit[i] = 1; name.ch[i] = glyph(); name.dirty = true; }
         }
-        rainDrops[i]++;
+        if (d.y < name.bbox.y1 + 1) active++;
       }
+      if (!active) setPhase("hold");
+      break;
     }
+    case "hold":
+      if (name.t > 6) { for (const i of name.cells) name.lit[i] = 0.35 + Math.random() * 0.65; setPhase("dissolve"); }
+      break;
+    case "dissolve":
+      // Cells drop out at random thresholds, so the name crumbles back into rain.
+      for (const i of name.cells) {
+        if (name.lit[i] && name.lit[i] < name.t / 2.4) { name.lit[i] = 0; name.dirty = true; }
+      }
+      if (name.t > 2.6) { name.lit.fill(0); setPhase("idle"); }
+      break;
+  }
+}
 
-    setInterval(draw, 30);
-  </script>
+let nameRedraw = 0;
+function renderName(dt) {
+  nameRedraw += dt;
+  // Flicker: a few lit glyphs change each frame; the layer is re-rendered at most ~12x/s.
+  if (name.phase !== "idle") {
+    for (let k = 0; k < 6; k++) {
+      const i = name.cells[(Math.random() * name.cells.length) | 0];
+      if (i !== undefined && name.lit[i]) { name.ch[i] = glyph(); name.dirty = true; }
+    }
+  }
+  if (!name.dirty || nameRedraw < 0.08) return;
+  nameRedraw = 0; name.dirty = false;
+  nctx.clearRect(0, 0, W, H);
+  nctx.font = `${name.cell + 1}px ${getComputedStyle(document.body).fontFamily}`;
+  nctx.textAlign = "center"; nctx.textBaseline = "middle";
+  nctx.fillStyle = theme.name; nctx.shadowColor = theme.glow; nctx.shadowBlur = name.cell * 0.9;
+  const c = name.cell;
+  for (const i of name.cells) {
+    if (!name.lit[i]) continue;
+    const x = (i % name.cols) * c + c / 2, y = ((i / name.cols) | 0) * c + c / 2;
+    nctx.fillText(name.ch[i], x, y);
+  }
+}
+
+// ---------- interaction: pointer, shockwaves, tilt ----------
+const pointer = { x: -1e4, y: -1e4, active: false };
+const waves = [];
+let lean = 0, leanTarget = 0;
+
+function displace(x, y) {
+  let dx = 0, dy = 0;
+  if (pointer.active) {
+    const R = Math.min(170, Math.max(W, H) * 0.14);
+    const ox = x - pointer.x, oy = y - pointer.y, d = Math.hypot(ox, oy);
+    if (d < R && d > 0.1) { const f = (1 - d / R) ** 2 * R * 0.45; dx += ox / d * f; dy += oy / d * f * 0.3; }
+  }
+  for (const w of waves) {
+    const ox = x - w.x, oy = y - w.y, d = Math.hypot(ox, oy), band = 46;
+    const k = 1 - Math.abs(d - w.r) / band;
+    if (k > 0 && d > 0.1) { const f = k * 38 * w.life; dx += ox / d * f; dy += oy / d * f; }
+  }
+  return [x + dx + lean * y * 0.35, y + dy];
+}
+
+function onPointer(e) {
+  pointer.x = e.clientX; pointer.y = e.clientY; pointer.active = true;
+}
+canvas.addEventListener("pointermove", onPointer);
+canvas.addEventListener("pointerleave", () => { pointer.active = false; });
+canvas.addEventListener("pointerdown", e => {
+  onPointer(e);
+  waves.push({ x: e.clientX, y: e.clientY, r: 0, life: 1 });
+  if (waves.length > 6) waves.shift();
+  // Clicking the name scrambles it.
+  if (name.phase !== "idle") for (const i of name.cells) if (name.lit[i]) name.ch[i] = glyph();
+  name.dirty = true;
+  askTilt();
+  if (e.pointerType !== "mouse") setTimeout(() => { pointer.active = false; }, 350);
+});
+
+let tiltAsked = false;
+function askTilt() {
+  if (tiltAsked || !("DeviceOrientationEvent" in window)) return;
+  tiltAsked = true;
+  const listen = () => addEventListener("deviceorientation", e => {
+    if (e.gamma != null) leanTarget = Math.max(-1, Math.min(1, e.gamma / 35));
+  });
+  // iOS asks for permission, and only from a tap.
+  if (typeof DeviceOrientationEvent.requestPermission === "function") {
+    DeviceOrientationEvent.requestPermission().then(s => s === "granted" && listen()).catch(() => {});
+  } else listen();
+}
+if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission !== "function") askTilt();
+
+// ---------- render loop ----------
+function resize() {
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  W = innerWidth; H = innerHeight;
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+  buildLayers(); buildName();
+  if (reduced) drawStill();
+}
+
+const font = size => `${size}px ${getComputedStyle(document.body).fontFamily}`;
+
+function frame(dt) {
+  // Fade everything a little each frame: that's what leaves the trails. Time-based, so trails
+  // are the same length at 60 Hz and 120 Hz.
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = `rgba(0,0,0,${1 - Math.pow(0.9, dt * 60)})`;
+  ctx.fillRect(0, 0, W, H);
+
+  for (const L of layers) {
+    ctx.font = font(L.size);
+    for (const d of L.drops) {
+      const prev = d.y;
+      d.y += d.v * dt * speed;
+      const cell = d.y | 0;
+      if (cell !== d.last) {
+        // Previous head becomes trail colour; new head is drawn white-hot.
+        if (d.last >= 0) {
+          const [px, py] = displace(d.x, d.last * L.size);
+          ctx.globalAlpha = L.alpha; ctx.fillStyle = theme.trail; ctx.fillText(d.ch, px, py);
+        }
+        d.ch = glyph(); d.last = cell;
+        const [hx, hy] = displace(d.x, cell * L.size);
+        ctx.globalAlpha = Math.min(1, L.alpha + 0.2); ctx.fillStyle = theme.head; ctx.fillText(d.ch, hx, hy);
+        // Occasionally mutate a glyph further up the trail, like the film.
+        if (Math.random() < 0.06 && cell > 3) {
+          const back = cell - 1 - ((Math.random() * 8) | 0);
+          const [mx, my] = displace(d.x, back * L.size);
+          ctx.globalAlpha = L.alpha * 0.7; ctx.fillStyle = theme.trail; ctx.fillText(glyph(), mx, my);
+        }
+      }
+      if (prev * L.size > H + 40 && Math.random() < 0.02 * dt * 60) Object.assign(d, makeDrop(L, false), { x: d.x });
+    }
+  }
+
+  // Shockwave rings of glyphs.
+  ctx.font = font(15);
+  for (let i = waves.length - 1; i >= 0; i--) {
+    const w = waves[i];
+    w.r += 620 * dt; w.life -= dt * 0.9;
+    if (w.life <= 0) { waves.splice(i, 1); continue; }
+    const n = Math.min(90, (w.r * 2 * Math.PI / 22) | 0);
+    ctx.globalAlpha = w.life * 0.9; ctx.fillStyle = theme.head;
+    for (let k = 0; k < n; k++) {
+      const a = (k / n) * Math.PI * 2 + w.r * 0.002;
+      ctx.fillText(glyph(), w.x + Math.cos(a) * w.r, w.y + Math.sin(a) * w.r);
+    }
+  }
+
+  stepName(dt); renderName(dt);
+  if (name.alpha > 0) {
+    ctx.globalAlpha = name.alpha;
+    ctx.drawImage(nameLayer, 0, 0, W, H);
+  }
+  ctx.globalAlpha = 1;
+}
+
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000);   // clamp after tab switches
+  last = now;
+  lean += (leanTarget - lean) * Math.min(1, dt * 4);
+  if (!paused) frame(dt);
+  requestAnimationFrame(loop);
+}
+
+// Reduced motion: one still frame with the name fully decoded, no animation.
+function drawStill() {
+  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+  for (const L of layers) {
+    ctx.font = font(L.size);
+    for (const d of L.drops) for (let r = 0; r * L.size < H; r++) {
+      if (Math.random() < 0.18) { ctx.globalAlpha = L.alpha * Math.random() * 0.5; ctx.fillStyle = theme.trail; ctx.fillText(glyph(), d.x, r * L.size); }
+    }
+  }
+  for (const i of name.cells) name.lit[i] = 1;
+  name.dirty = true; nameRedraw = 1; renderName(0);
+  ctx.globalAlpha = 1; ctx.drawImage(nameLayer, 0, 0, W, H); ctx.drawImage(nameLayer, 0, 0, W, H);
+}
+
+addEventListener("resize", () => { clearTimeout(resize.t); resize.t = setTimeout(resize, 120); });
+resize();
+name.first = true;
+if (!reduced) requestAnimationFrame(loop);
+
+// ---------- terminal ----------
+const term = document.getElementById("term"), out = document.getElementById("out"), input = document.getElementById("in");
+const tbtn = document.getElementById("tbtn");
+tbtn.hidden = false;
+const history = []; let hpos = 0;
+
+function print(text = "", cls) {
+  const div = document.createElement("div");
+  div.textContent = text;                       // never innerHTML: input is echoed back
+  if (cls) div.className = cls;
+  out.appendChild(div); out.scrollTop = out.scrollHeight;
+}
+async function typeOut(lines, ms = 38) {
+  for (const l of lines) {
+    const div = document.createElement("div"); out.appendChild(div);
+    for (const ch of l) { div.textContent += ch; out.scrollTop = out.scrollHeight; await new Promise(r => setTimeout(r, ms)); }
+    await new Promise(r => setTimeout(r, 450));
+  }
+}
+function setTheme(t) {
+  theme = THEMES[t]; document.documentElement.style.setProperty("--fg", theme.trail);
+  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H); name.dirty = true; nameRedraw = 1;
+  if (reduced) drawStill();
+}
+
+const COMMANDS = {
+  help: () => print([
+    "help             this list",
+    "whoami           who runs this place",
+    "theme <name>     green · red · blue · amber · white",
+    "speed <0.2-3>    rain speed (now " + speed + ")",
+    "density <0.3-1>  how many streams",
+    "name             decode the name now",
+    "pause / resume   stop or start the rain",
+    "clear · exit",
+  ].join("\n")),
+  whoami: () => print("andy hatman"),
+  theme: a => THEMES[a] ? (setTheme(a), print(`theme: ${a}`)) : print("themes: " + Object.keys(THEMES).join(" · ")),
+  speed: a => { const v = parseFloat(a); if (v >= 0.2 && v <= 3) { speed = v; print(`speed: ${v}`); } else print("usage: speed 0.2-3"); },
+  density: a => { const v = parseFloat(a); if (v >= 0.3 && v <= 1) { densityMul = v; buildLayers(); print(`density: ${v}`); } else print("usage: density 0.3-1"); },
+  name: () => { startDecode(); print("decoding…"); },
+  pause: () => { paused = true; print("rain paused"); },
+  resume: () => { paused = false; print("rain resumed"); },
+  clear: () => { out.textContent = ""; },
+  exit: () => closeTerm(),
+  date: () => print(new Date().toString()),
+  uname: () => print("Matrix 1.0 construct x86_64"),
+  ls: () => print("follow_the_white_rabbit  red_pill  blue_pill"),
+  cat: a => print(a ? `cat: ${a}: there is no file` : "cat: missing operand"),
+  sudo: () => print("guest is not in the sudoers file. This incident will be reported.", "dim"),
+  rm: () => print("nice try.", "dim"),
+  red_pill: () => { setTheme("red"); print("You stay in Wonderland, and I show you how deep the rabbit hole goes."); },
+  blue_pill: () => { setTheme("blue"); print("The story ends. You wake up in your bed and believe whatever you want to believe."); setTimeout(closeTerm, 1800); },
+  neo: () => COMMANDS.follow(),
+  follow: async () => {
+    input.disabled = true; out.textContent = "";
+    await typeOut(["Wake up, Neo...", "The Matrix has you...", "Follow the white rabbit."]);
+    await new Promise(r => setTimeout(r, 900));
+    setTheme("white"); print("Knock, knock.");
+    setTimeout(() => setTheme("green"), 1600);
+    input.disabled = false; input.focus();
+  },
+};
+COMMANDS["red"] = COMMANDS.red_pill; COMMANDS["blue"] = COMMANDS.blue_pill;
+
+function run(line) {
+  const raw = line.trim();
+  print(`$ ${raw}`, "dim");
+  if (!raw) return;
+  history.push(raw); hpos = history.length;
+  const low = raw.toLowerCase();
+  if (/^(follow the white rabbit|wake up,? neo|knock,? knock)/.test(low)) return COMMANDS.follow();
+  const [cmd, ...args] = low.replace(/\s+pill$/, "_pill").split(/\s+/);
+  const fn = COMMANDS[cmd.replace(/^\.\//, "")];
+  fn ? fn(args.join(" ")) : print(`${cmd}: command not found (try help)`);
+}
+
+function openTerm() {
+  if (!term.hidden) return input.focus();
+  term.hidden = false; tbtn.hidden = true;
+  if (!out.childElementCount) print("type help", "dim");
+  input.focus();
+}
+function closeTerm() { term.hidden = true; tbtn.hidden = false; input.blur(); }
+
+tbtn.addEventListener("click", openTerm);
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter") { run(input.value); input.value = ""; }
+  else if (e.key === "Escape") closeTerm();
+  else if (e.key === "ArrowUp") { if (hpos > 0) input.value = history[--hpos]; e.preventDefault(); }
+  else if (e.key === "ArrowDown") { input.value = hpos < history.length - 1 ? history[++hpos] : (hpos = history.length, ""); e.preventDefault(); }
+  else if (e.key === "Tab") {
+    e.preventDefault();
+    const hits = Object.keys(COMMANDS).filter(c => c.startsWith(input.value.trim().toLowerCase()));
+    if (hits.length === 1) input.value = hits[0] + " "; else if (hits.length) print(hits.join("  "), "dim");
+  }
+});
+// ` or / opens the terminal; Esc closes it.
+addEventListener("keydown", e => {
+  if (e.target === input || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === "`" || e.key === "/" || e.key === "~") { e.preventDefault(); openTerm(); }
+});
+</script>
 </body>
 </html>
